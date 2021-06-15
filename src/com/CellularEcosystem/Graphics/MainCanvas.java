@@ -14,7 +14,7 @@ import java.util.ConcurrentModificationException;
 public class MainCanvas extends JComponent
 {
     MainController controller;
-    World world;
+    public World world;
 
     //Secondary canvases
     DebugDraw debugDraw;
@@ -24,10 +24,9 @@ public class MainCanvas extends JComponent
     static ArrayList<Transform> drawTransforms;
 
 
-    public MainCanvas(MainController controller_, World world_)
+    public MainCanvas(MainController controller_)
     {
         controller = controller_;
-        world = world_;
 
         debugDraw = new DebugDraw(controller);
 
@@ -62,7 +61,9 @@ public class MainCanvas extends JComponent
         try { debugDraw.DrawDebug(g); }
         catch (NullPointerException e){return;}
 
-        DrawWorldTiles(g);
+        if (world != null)
+            DrawWorldTiles(g);
+
 
         //Draw transforms
         for(Transform tt : drawTransforms)
@@ -80,17 +81,14 @@ public class MainCanvas extends JComponent
         {
             for(int i = 0; i < World.size; i++)
             {
-
                 Vector2 pp = new Vector2(i - World.size / 2.0,j - World.size / 2.0);
                 Vector2Int screenPos = Camera.WorldToScreen(pp);
 
                 int nn = World.worldUnit;
 
-                g.setColor(world.tiles[i][j].color);
+                g.setColor(world.tiles[i][j].GetColor());
                 g.fillRect(screenPos.x, screenPos.y, nn,nn);
             }
         }
-
     }
-
 }

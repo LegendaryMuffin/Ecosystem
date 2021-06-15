@@ -8,6 +8,7 @@ public class MainController implements Runnable
     //Time
     public static long currentTime;
     public static int ticks;
+    public static double targetFrameRate = 1000.0 / 60.0;
 
     public static int gameTicks = 0;
     int gameTickLength = 90; //ticks per game second -> 1.5s
@@ -16,7 +17,7 @@ public class MainController implements Runnable
     public Library library;
     public MouseInput mouse;
     KeyInput keyPress;
-    MainCanvas canvas;
+    public MainCanvas canvas;
     World world;
 
     //Constructor
@@ -28,8 +29,8 @@ public class MainController implements Runnable
 
         //Setup main classes
         library = library_;
+        canvas = new MainCanvas(this);
         world = new World(this);
-        canvas = new MainCanvas(this,world);
 
 
         //Represent number of horizontal world units in camera view
@@ -44,8 +45,6 @@ public class MainController implements Runnable
         //Setup main Update loop with target 60 fps
         long lastUpdateTime = System.currentTimeMillis();
         double deltaTime = 0.0;
-
-        double targetFrameRate = 1000.0 / 60.0;
         ticks = 0;
 
         while(true)

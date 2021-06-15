@@ -2,6 +2,7 @@ package com.CellularEcosystem.World;
 
 import com.CellularEcosystem.Controller.*;
 import com.CellularEcosystem.Objects.Vector2;
+import com.CellularEcosystem.Objects.Vector2Int;
 import com.CellularEcosystem.Objects.WorldTile;
 
 import java.awt.*;
@@ -21,8 +22,13 @@ public class World
 
     WorldNoise worldNoise;
 
-    Color baseColor;
-    Color mainColor;
+
+    public int maxColonies = 1;
+    public ColonyManager colonyManager;
+
+    //Dumb color lerping and shit
+    public Color baseColor;
+    public Color mainColor;
 
     int redBase;
     double redAmount;
@@ -31,21 +37,7 @@ public class World
     int blueBase;
     double blueAmount;
 
-    Color[] darkColors = {
-            new Color(15,1,65),
-            new Color(60,1,20),
-            new Color(1,40,20),
-            new Color(50,20,50),
-            new Color(20,20,20),
-    };
 
-    Color[] brightColors = {
-            new Color(255,160,255),
-            new Color(150,255,220),
-            new Color(255,255,120),
-            new Color(230,230,230),
-            new Color(165,255,165),
-    };
 
     public WorldTile[][] tiles;
 
@@ -53,18 +45,29 @@ public class World
 
     public World(MainController controller_)
     {
+        //Setup base references
         controller = controller_;
+        controller.canvas.world = this;
         worldUnit = (Main.Screen.height / World.size); //-> screen world X coordinates range from (-size / 2) to (size / 2)
 
-        //baseColor = new Color(254,254,120);
-        //mainColor = new Color(100,20,150);
+        SetupColors();
 
-        int rng = (int)Math.floor(Math.random() * darkColors.length);
-        mainColor = darkColors[rng];
+        worldNoise = new WorldNoise(controller, this);
+        SetupWorldTiles();
+        colonyManager = new ColonyManager(controller, this );
+
+        //boidManager = new BoidManager(controller, this);
+
+    }
+
+    void SetupColors()
+    {
+        int rng = (int)Math.floor(Math.random() * Library.darkColors.length);
+        mainColor = new Color(100,100,100);;//Library.darkColors[rng];
         Main.Screen.frame.getContentPane().setBackground(mainColor);
 
-        rng = (int)Math.floor(Math.random() * brightColors.length);
-        baseColor = brightColors[rng];
+        rng = (int)Math.floor(Math.random() * Library.brightColors.length);
+        baseColor = Color.black;//Library.brightColors[rng];
 
         redBase = baseColor.getRed();
         greenBase = baseColor.getGreen();
@@ -73,24 +76,9 @@ public class World
         redAmount = mainColor.getRed() - redBase;
         greenAmount = mainColor.getGreen() - greenBase;
         blueAmount = mainColor.getBlue() - blueBase;
-
-        worldNoise = new WorldNoise(controller, this);
-        SetupWorldData();
-        //boidManager = new BoidManager(controller, this);
-
     }
 
-    public Color LerpColor(double pc)
-    {
-        int rr = (int)Math.round(redAmount * pc);
-        int gg = (int)Math.round(greenAmount * pc);
-        int bb = (int)Math.round(blueAmount * pc);
-
-        System.out.println(rr);
-        return new Color (redBase + rr,greenBase + gg,blueBase + bb);
-    }
-
-    void SetupWorldData()
+    void SetupWorldTiles()
     {
         tiles = new WorldTile[size][size];
 
@@ -99,12 +87,13 @@ public class World
             for(int i = 0; i < size; i++)
             {
                 //Get distance from center
-                double xx = Math.abs(i - size/2);
-                double yy = Math.abs(j - size/2);
+                double xx = Math.abs(i - World.size/2);
+                double yy = Math.abs(j - World.size/2);
+                Vector2Int pos = new Vector2Int(i,j);
                 double dist = Math.sqrt(xx*xx+yy*yy);
                 dist = Math.min(size/2.0, dist) / (size / 2.0);
 
-                tiles[i][j] = new WorldTile(this,0,dist,baseColor);
+                tiles[i][j] = new WorldTile(this,0,pos, dist);
             }
         }
     }
@@ -112,8 +101,8 @@ public class World
     public void Update()
     {
         worldNoise.Update();
+        colonyManager.Update();
+
         //boidManager.Update();
     }
-
-
 }

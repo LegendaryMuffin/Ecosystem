@@ -2,6 +2,7 @@ package com.CellularEcosystem.Objects;
 
 import java.awt.*;
 
+//Class used to draw things on top of grid (not restricted to grid)
 public abstract class Transform
 {
     //Draw parameters

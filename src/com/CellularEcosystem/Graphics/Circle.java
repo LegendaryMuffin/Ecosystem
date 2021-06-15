@@ -1,3 +1,4 @@
+
 package com.CellularEcosystem.Graphics;
 
 import com.CellularEcosystem.Controller.Camera;
@@ -8,13 +9,14 @@ import java.awt.*;
 
 public class Circle extends Transform
 {
-
     //Circle constructor
-    public Circle(Vector2 position_, double radius)
+    public Circle(Vector2 position_, double radius, Color color_, DrawMode drawMode_)
     {
         position = position_;
         bounds = new Vector2(radius,radius);
         scale = new Vector2(1.0,1.0);
+        color = color_;
+        drawMode = drawMode_;
 
         MainCanvas.AddToTransformDrawList(this);
     }
@@ -29,6 +31,9 @@ public class Circle extends Transform
         int xx = (int)(World.worldUnit * bounds.x * 2.0 * scale.x);
         int yy = (int)(World.worldUnit * bounds.y * 2.0 * scale.y);
 
+        g.setColor(color);
+
+
         if (drawMode == DrawMode.stroke)
         {
             g.drawArc(screenStart.x, screenStart.y, xx,yy, 0, 360);
@@ -36,7 +41,7 @@ public class Circle extends Transform
         }
         else
         {
-            g.drawArc(screenStart.x, screenStart.y, xx,yy, 0, 360);
+            g.fillArc(screenStart.x, screenStart.y, xx,yy, 0, 360);
         }
     }
 }

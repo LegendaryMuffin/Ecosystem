@@ -23,10 +23,11 @@ public class WorldNoise {
     boolean noiseLoaded = false;
 
     //Base parameters
-    double baseScale = 0.111; //% of noiseMap covered with worldTiles
-    double scaleVariationAmount = 0.41;
+    double baseScale = 0.0852; //% of noiseMap covered with worldTiles
+    double lacunarity = 0.1711;
+    double scaleVariationAmount = 0.17;
     Vector2 scaleModifier;
-    double rotationAmount = 0.07;
+    double rotationAmount = 0.03;
     boolean clockwise = true;
 
     Vector2 noisePos;
@@ -112,10 +113,6 @@ public class WorldNoise {
         {
             for(int i = 0; i < World.size; i++)
             {
-                if (MainController.ticks % 2 == i % 2)
-                   continue;
-
-
                 //Get noise
                 double x = ((double)i / World.size - 0.5) * baseScale * scaleModifier.x + noiseVector.x;
                 double y = ((double)j / World.size - 0.5) * baseScale * scaleModifier.y + noiseVector.y;
@@ -126,7 +123,18 @@ public class WorldNoise {
                 noiseX = ClampInt(noiseX,0,511);
                 noiseY = ClampInt(noiseY,0,511);
 
-                world.tiles[i][j].SetNoise(noiseMap[noiseX][noiseY] * 0.85 + noiseMap[(noiseX * 2) % 511][(noiseY * 2) % 511] * 0.3255);
+                double baseNoise = noiseMap[noiseX][noiseY];
+                double noiseMod0 = noiseMap[(noiseX * 2) % 511][(noiseY * 2) % 511] * lacunarity;
+                double noiseMod1 = noiseMap[(noiseX * 4) % 511][(noiseY * 4) % 511] * lacunarity * lacunarity;
+
+                double density = baseNoise - lacunarity / 2.0 + noiseMod0 + noiseMod1;
+                //double density = 2.2 * dd - dd * dd * 1.2;
+                density = Math.min(Math.max(0.0, density), 1.0);
+
+                if (i == 0 || j == 0 || i == World.size - 1 || j == World.size - 1)
+                    world.tiles[i][j].density = 0.0;
+                else
+                    world.tiles[i][j].SetDensity(density);
             }
         }
     }
