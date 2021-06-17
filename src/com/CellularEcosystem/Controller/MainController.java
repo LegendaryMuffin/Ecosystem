@@ -14,23 +14,21 @@ public class MainController implements Runnable
     int gameTickLength = 90; //ticks per game second -> 1.5s
 
     //Class references
-    public Library library;
     public MouseInput mouse;
     KeyInput keyPress;
     public MainCanvas canvas;
     World world;
 
     //Constructor
-    public MainController(Library library_)
+    public MainController()
     {
         //Instantiate mouse / keyboard listeners
         mouse = new MouseInput();
         keyPress = new KeyInput();
 
         //Setup main classes
-        library = library_;
-        canvas = new MainCanvas(this);
         world = new World(this);
+        canvas = new MainCanvas(this, world);
 
 
         //Represent number of horizontal world units in camera view
@@ -85,6 +83,7 @@ public class MainController implements Runnable
 
         return days + " # " + hours + " : " + minutes;
     }
+
     public double GetTimeAngle()
     {
         int cycleTicks = gameTickLength * 60;
@@ -93,5 +92,4 @@ public class MainController implements Runnable
 
         return Math.PI * 2.0 * pc;
     }
-
 }

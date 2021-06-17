@@ -31,20 +31,22 @@ public class Main
 
 
         //Create application frame
-        JFrame newFrame = new JFrame("(O _ O)");
-        newFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        newFrame.setPreferredSize(new Dimension(Screen.width, Screen.height));
+        Screen.frame = new JFrame("(O _ O)");
+        Screen.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        Screen.frame = newFrame;
+        //Set fullscreen
+        Screen.frame.setExtendedState(JFrame.MAXIMIZED_BOTH);//-> Same as setPrefferedSize(width,height)
 
-        //Load resources
-        Library lib = new Library();
+        if (Settings.fullscreen)
+            Screen.frame.setUndecorated(true);
 
-        //Create thread with MainController class -> start
-        Thread mainThread = new Thread(new MainController(lib));
+        //Create thread with MainController class -> Setup
+        Thread mainThread = new Thread(new MainController());
         mainThread.start();
 
-        newFrame.pack();
-        newFrame.setVisible(true);
+        //Initialize frame
+        Screen.frame.getContentPane().setBackground(Settings.darkBackgroundColor);
+        Screen.frame.pack();
+        Screen.frame.setVisible(true);
     }
 }

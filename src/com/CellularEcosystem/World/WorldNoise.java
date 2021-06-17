@@ -1,7 +1,10 @@
 package com.CellularEcosystem.World;
 
+import com.CellularEcosystem.Controller.Library;
 import com.CellularEcosystem.Controller.MainController;
+import com.CellularEcosystem.Controller.Settings;
 import com.CellularEcosystem.Objects.Vector2;
+import com.CellularEcosystem.Objects.WorldTile;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -16,22 +19,15 @@ public class WorldNoise {
 
     //Noise texture
     public BufferedImage noiseTexture = null;
+
+    //noise values (0-1)
+    double[][] noiseMap;
     int noiseWidth;
     int noiseHeight;
-    double[][] noiseMap;
 
-    boolean noiseLoaded = false;
-
-    //Base parameters
-    double baseScale = 0.0852; //% of noiseMap covered with worldTiles
-    double lacunarity = 0.1711;
-    double scaleVariationAmount = 0.17;
-    Vector2 scaleModifier;
-    double rotationAmount = 0.03;
-    boolean clockwise = true;
-
-    Vector2 noisePos;
-
+    //Light noise
+    Vector2[] lightVectors;
+    double[] lightVectorAngles;
 
 
     public WorldNoise(MainController controller_, World world_)
@@ -41,21 +37,17 @@ public class WorldNoise {
 
         SetupNoiseMap();
 
-
-        //Random position on noiseMap
-        double amp = (1.0 - baseScale * 2.0);
-        double x = Math.random() * amp + baseScale;
-        double y = Math.random() * amp + baseScale;
-        noisePos = new Vector2(x,y);
-
-        //Random scale modifier -> leads to elliptical orbit on noiseMap
-        double cc = 1.0 - scaleVariationAmount / 2.0;
-        scaleModifier = new Vector2(cc,cc);
-        scaleModifier.x += (Math.random() * scaleVariationAmount);
-        scaleModifier.y += (Math.random() * scaleVariationAmount);
-
-        noiseLoaded = true;
+        SetupDensityNoise();
+        SetupLightNoise();
     }
+
+
+    public void Update()
+    {
+        UpdateLight();
+    }
+
+    // * * * <  T E X T U R E  > * * *
 
     void SetupNoiseMap()
     {
@@ -63,8 +55,8 @@ public class WorldNoise {
         try { noiseTexture = ImageIO.read(new File("src/sprites/noiseTexture.png"));}
         catch (IOException e) {e.printStackTrace();}
 
-        int noiseWidth = noiseTexture.getWidth();
-        int noiseHeight = noiseTexture.getHeight();
+        noiseWidth = noiseTexture.getWidth();
+        noiseHeight = noiseTexture.getHeight();
 
         //System.out.println(noiseWidth);
 
@@ -74,64 +66,42 @@ public class WorldNoise {
         {
             for(int i = 0; i < noiseWidth; i ++)
             {
+                //Get color
                 Color col = new Color(noiseTexture.getRGB(i,j));
 
+                //value between 0-1
                 noiseMap[i][j] = (col.getRed() + col.getGreen() + col.getBlue()) / 765.0;
-
             }
         }
-
     }
 
-    public void Update()
+    // * * * <  D E N S I T Y  > * * *
+
+    void SetupDensityNoise()
     {
-        if (!noiseLoaded)
-            return;
+        //Random position on noiseMap
+        double amp = (1.0 - Settings.densityNoiseSize);
+        double noiseX = Math.random() * amp;
+        double noiseY = Math.random() * amp;
 
-        UpdateDensity();
-    }
 
-    Vector2 GetCurrentNoiseVector()
-    {
-
-        double ang = controller.GetTimeAngle();
-
-        if (clockwise)
-            ang = Math.PI * 2.0 - ang;
-
-        double xx = Math.cos(ang) * scaleModifier.y * rotationAmount + noisePos.x;
-        double yy = Math.sin(ang) * scaleModifier.x * rotationAmount + noisePos.y;
-
-         return new Vector2(xx, yy);
-    }
-
-    void UpdateDensity()
-    {
-        Vector2 noiseVector = GetCurrentNoiseVector();
-
-        for(int j = 0; j < World.size; j++)
+        for(int j = 0; j < Settings.worldSize; j++)
         {
-            for(int i = 0; i < World.size; i++)
+            for(int i = 0; i < Settings.worldSize; i++)
             {
                 //Get noise
-                double x = ((double)i / World.size - 0.5) * baseScale * scaleModifier.x + noiseVector.x;
-                double y = ((double)j / World.size - 0.5) * baseScale * scaleModifier.y + noiseVector.y;
+                double x = ((double)i / Settings.worldSize + noiseX) * noiseWidth;
+                double y = ((double)j / Settings.worldSize + noiseY) * noiseHeight;
 
+                int xx = (int) (x * Settings.densityNoiseSize);
+                int yy = (int) (y * Settings.densityNoiseSize);
 
-                int noiseX = (int) Math.floor(x * 512);
-                int noiseY = (int) Math.floor(y * 512);
-                noiseX = ClampInt(noiseX,0,511);
-                noiseY = ClampInt(noiseY,0,511);
+                xx = Library.ClampInt(xx,0,noiseWidth-1);
+                yy = Library.ClampInt(yy,0,noiseHeight-1);
 
-                double baseNoise = noiseMap[noiseX][noiseY];
-                double noiseMod0 = noiseMap[(noiseX * 2) % 511][(noiseY * 2) % 511] * lacunarity;
-                double noiseMod1 = noiseMap[(noiseX * 4) % 511][(noiseY * 4) % 511] * lacunarity * lacunarity;
+                double density = GetDensity(xx,yy);
 
-                double density = baseNoise - lacunarity / 2.0 + noiseMod0 + noiseMod1;
-                //double density = 2.2 * dd - dd * dd * 1.2;
-                density = Math.min(Math.max(0.0, density), 1.0);
-
-                if (i == 0 || j == 0 || i == World.size - 1 || j == World.size - 1)
+                if (i == 0 || j == 0 || i == Settings.worldSize - 1 || j == Settings.worldSize - 1)
                     world.tiles[i][j].density = 0.0;
                 else
                     world.tiles[i][j].SetDensity(density);
@@ -139,9 +109,148 @@ public class WorldNoise {
         }
     }
 
-
-    public int ClampInt(int num, int min, int max)
+    double GetDensity(int x, int y)
     {
-        return Math.min(Math.max(num, min), max);
+        double noiseAmount = 0.0;
+
+        double amp = Settings.densityNoiseAmplitude;
+        int xx = x;
+        int yy = y;
+
+        for(int k = 0; k < Settings.densityNoiseLayers; k++)
+        {
+            //Get noise amount
+            noiseAmount += noiseMap[xx][yy] * amp;
+
+            //Apply modifiers
+            amp *= Settings.densityNoisePersistence;
+            xx = ((int)(xx * Settings.densityNoiseLacunarity)) % noiseWidth;
+            yy = ((int)(yy * Settings.densityNoiseLacunarity)) % noiseHeight;
+        }
+
+        //return total final density
+        double density = 1.0 - noiseAmount - Settings.densityNoiseGamma;
+        return Math.min(Math.max(density, 0.0), 1.0);
     }
+
+
+    // * * * <  L I G H T  > * * *
+
+
+    void SetupLightNoise()
+    {
+        lightVectors = new Vector2[Settings.lightResolution];
+        lightVectorAngles = new double[Settings.lightResolution];
+
+        //Random position on noiseMap
+        double amp = (1.0 - Settings.lightNoiseSize * 2.0);
+        int noiseX = (int)(Math.random() * amp + Settings.lightNoiseSize);
+        int noiseY = (int)(Math.random() * amp + Settings.lightNoiseSize);
+
+        for(int k = 0; k < Settings.lightResolution; k++)
+        {
+            //Get angle
+            double slice = Math.random() * Math.PI * 2.0 / Settings.lightResolution;
+            double rng = Math.random() * Settings.lightResolutionRandomness;
+            double ang = slice * k + rng;
+
+            //Get vector noise positions
+            double lightNoise = GetLightNoise(noiseX, noiseY, ang);
+
+            double xx = Math.cos(ang) * Settings.lightRadius * lightNoise;
+            double yy = Math.sin(ang) * Settings.lightRadius * lightNoise;
+
+            lightVectors[k] = new Vector2(xx,yy);
+            lightVectorAngles[k] = ang;
+        }
+    }
+
+    double GetLightNoise(int noiseX, int noiseY, double ang)
+    {
+        double lightAmount = 0.0;
+        double amp = Settings.lightNoiseAmplitude;
+
+        //Get noise texture coordinates
+        double xx = Math.cos(ang) * Settings.lightNoiseSize;
+        double yy = Math.sin(ang) * Settings.lightNoiseSize;
+
+
+        for(int k = 0; k < Settings.lightNoiseLayers; k++)
+        {
+            xx *= Settings.lightNoiseLacunarity;
+            yy *= Settings.lightNoiseLacunarity;
+
+            int x = (int)Math.min(xx,noiseWidth-1) + noiseX;
+            int y = (int)Math.min(yy,noiseHeight-1) + noiseY;
+
+            //Get noise amount
+            lightAmount += noiseMap[x][y] * amp;
+
+            //Apply modifiers
+            amp *= Settings.lightNoisePersistence;
+        }
+
+        //return total final light
+        double light = lightAmount + Settings.lightNoiseGamma;
+        return Math.min(Math.max(light, 0.0), 1.0);
+    }
+
+
+    void UpdateLight()
+    {
+        //Update light according to cycle
+        for(int j = 0; j < Settings.worldSize; j++)
+        {
+            for (int i = 0; i < Settings.worldSize; i++)
+            {
+                WorldTile tile = world.tiles[i][j];
+
+
+
+
+                tile.lightAmount = GetLightAmount(tile.angle, tile.distance);
+            }
+        }
+    }
+
+    double GetLightAmount(double angle, double dist)
+    {
+        double lightMod = 1.0;
+        double currentAng = 0.0;
+
+        for(int k = 0; k < Settings.lightResolution - 1; k++)
+        {
+            currentAng += lightVectorAngles[k];
+
+            if (angle <= currentAng)
+            {
+                double pp = (currentAng - angle);
+                double pc = 0.0;
+
+                if (k == 0)
+                {
+                    pc =  angle / currentAng;
+
+                }
+                else
+                {
+                    pc =  (angle - lightVectorAngles[k-1]) / (currentAng - lightVectorAngles[k-1]);
+                }
+
+                double xx = lightVectors[k].x * pc + lightVectors[k+1].x * (1.0 - pc);
+                double yy = lightVectors[k].y * pc + lightVectors[k+1].y * (1.0 - pc);
+
+                double magn = Math.sqrt(xx * xx + yy * yy);
+
+
+                return (1.0 - dist) ;//;* magn;
+            }
+
+        }
+
+
+
+        return lightMod;
+    }
+
 }

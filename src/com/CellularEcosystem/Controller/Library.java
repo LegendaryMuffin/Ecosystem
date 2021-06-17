@@ -1,5 +1,7 @@
 package com.CellularEcosystem.Controller;
 
+import com.CellularEcosystem.Objects.Vector2;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
@@ -33,6 +35,8 @@ public class Library {
     }
 
 
+    /* * * < U T I L I T Y   F U N C T I O N S > * * */
+
     public static Color LerpColor(double pc, Color color0, Color color1)
     {
         int rr = (int)Math.round((color1.getRed() - color0.getRed()) * pc);
@@ -42,10 +46,18 @@ public class Library {
         return new Color (color0.getRed() + rr,color0.getGreen() + gg,color0.getBlue() + bb);
     }
 
-    //Color palette and stuff
-    public static class Style
+    public static Vector2 AddVectors(Vector2 vec0, Vector2 vec1)
     {
-        public static Color backgroundColor = new Color(20,20,20);
-        public static Color gridColor = new Color(40, 40, 40);
+        return new Vector2(vec0.x + vec1.x, vec0.y + vec1.y);
+    }
+
+    public static double Clamp(double num, double min, double max)
+    {
+        return Math.min(Math.max(num, min),max);
+    }
+
+    public static int ClampInt(int num, int min, int max)
+    {
+        return Math.min(Math.max(num, min),max);
     }
 }

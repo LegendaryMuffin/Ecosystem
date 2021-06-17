@@ -17,7 +17,6 @@ public class DebugDraw
 
 
 
-
     public void DrawDebug(Graphics g)
     {
         if (Main.debugMode == Main.DebugMode.disabled)
@@ -47,21 +46,22 @@ public class DebugDraw
     void DrawDebugGrid(Graphics g)
     {
         //Draw world grid
-        g.setColor(Library.Style.gridColor);
+        g.setColor(Settings.debugGridColor);
 
-        for(int j = 0; j < World.size; j++)
+        for(int j = 0; j < Settings.worldSize; j++)
         {
-            for(int i = 0; i < World.size; i++)
+            for(int i = 0; i < Settings.worldSize; i++)
             {
                 if ((j + i) % 2 == 0)
                     continue;
 
-                Vector2 pp = new Vector2(i - World.size / 2.0,j - World.size / 2.0);
-                Vector2Int screenPos = Camera.WorldToScreen(pp);
+                Vector2 pp = new Vector2(i - Settings.worldSize / 2.0,j - Settings.worldSize / 2.0);
+                Vector2Int screenStart = Camera.WorldToScreen(pp);
 
-                int nn = World.worldUnit;
+                pp = Library.AddVectors(pp, World.worldUnitVector);
+                Vector2Int screenEnd = Camera.WorldToScreen(pp);
 
-                g.fillRect(screenPos.x, screenPos.y, nn,nn);
+                g.fillRect(screenStart.x, screenStart.y, screenEnd.x,screenEnd.y);
             }
         }
     }
@@ -69,14 +69,14 @@ public class DebugDraw
     void DrawDebugAxis(Graphics g)
     {
         //Draw x axis
-        Vector2Int xx = Camera.WorldToScreen(new Vector2(-World.size /2.0,0));
+        Vector2Int xx = Camera.WorldToScreen(new Vector2(-Settings.worldSize /2.0,0));
         g.setColor(Color.cyan);
-        g.fillRect(xx.x, xx.y - 1, World.worldUnit * World.size,2);
+        g.fillRect(xx.x, xx.y - 1, (int)World.worldUnit * Settings.worldSize,2);
 
         //Draw y axis
-        Vector2Int yy = Camera.WorldToScreen(new Vector2(0,-World.size /2.0));
+        Vector2Int yy = Camera.WorldToScreen(new Vector2(0,-Settings.worldSize /2.0));
         g.setColor(Color.yellow);
-        g.fillRect(yy.x - 1, yy.y, 2,World.worldUnit * World.size );
+        g.fillRect(yy.x - 1, yy.y, 2,(int)World.worldUnit * Settings.worldSize );
 
         //Draw origin just because I can
         Vector2Int oo = Camera.WorldToScreen(new Vector2(0,0));

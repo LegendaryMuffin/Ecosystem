@@ -1,6 +1,7 @@
 package com.CellularEcosystem.World;
 
 import com.CellularEcosystem.Controller.MainController;
+import com.CellularEcosystem.Controller.Settings;
 import com.CellularEcosystem.Graphics.Circle;
 import com.CellularEcosystem.Objects.*;
 
@@ -17,7 +18,6 @@ public class Colony {
     public Juice juice;
 
     //Resource properties
-    double consumptionRate = 0.05;
     double productionRate = 1.0;
 
     public Color color = Color.magenta;
@@ -29,14 +29,40 @@ public class Colony {
         colonyManager = colonyManager_;
         world = colonyManager_.world;
 
+        //Setup juice
+        SetupJuice();
+
+
         //Setup colony spawn
         position = spawnPosition;
-        world.tiles[position.x][position.y].colony = this;
+        world.tiles[position.x][position.y].juice = juice;
         world.tiles[position.x][position.y].id = 2;
 
-        //Setup juice
-        juice = new Juice(Color.cyan, 0.3,0.1,0.0,0.06);
     }
+
+    void SetupJuice()
+    {
+        for (int k = 0; k < Settings.maxColonies; k++)
+        {
+            int randomColor = (int)(Math.random() * Settings.colonyColors.length);
+            Color color = Settings.colonyColors[randomColor];
+
+            //Percentage of juice that stays on tile after spread
+            double viscosity = Settings.baseViscosity + (Math.random() * 2.0 - 1.0) * Settings.viscosityVariation;
+            double minimumSpread = Settings.baseMinimumSpread + (Math.random() * 2.0 - 1.0) * Settings.minimumSpreadVariation;
+
+            //Determines how much juice is impacted by cell density
+            double volatility = Settings.baseVolatility + (Math.random() * 2.0 - 1.0) * Settings.volatilyVariation;
+
+            double decay = Settings.baseDecay + (Math.random() * 2.0 - 1.0) * Settings.decayVariation;
+
+            juice = new Juice(color, viscosity,minimumSpread,volatility,decay);
+
+
+        }
+
+    }
+
 
     public void Update()
     {
@@ -60,20 +86,18 @@ public class Colony {
                     continue;
 
                 //Add resource
-                tile.resource += productionRate / MainController.targetFrameRate;
-                tile.resource = Math.min(tile.resource,tile.density);
+                tile.amount += productionRate / MainController.targetFrameRate;
+                tile.amount = Math.min(tile.amount,tile.density);
 
-                //Manage decay
-                tile.resource *= (1.0 + juice.decay);
-
-                if (tile.resource < 0.001)
+                //Adjust juice reference
+                if (tile.amount < 0.001)
                 {
-                    tile.colony = null;
+                    tile.juice = null;
                     tile.id = 0;
                 }
-                else
+                else if (tile.id == 0)
                 {
-                    tile.colony = this;
+                    tile.juice = juice;
                     tile.id = 1;
                 }
 

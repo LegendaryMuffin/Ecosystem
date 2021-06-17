@@ -1,117 +1,192 @@
 package com.CellularEcosystem.Objects;
 
 import com.CellularEcosystem.Controller.Library;
+import com.CellularEcosystem.Controller.Settings;
 import com.CellularEcosystem.World.Colony;
+import com.CellularEcosystem.World.ColonyManager;
 import com.CellularEcosystem.World.World;
 
+import javax.swing.text.Position;
 import java.awt.*;
 
 public class WorldTile
 {
+    //References
     World world;
+    ColonyManager colonyManager;
 
     /*ID****
     0: empty
     1: juice tile
     2: colony tile
      */
-    public int id = 0;
-    public Colony colony;
-    public double resource;
+    public int id;
+    Vector2Int position;
+    public double distance; // from center
+    public double angle; //from center
 
-    Vector2Int position; // ()
-    public double distance;
+    //Juice
+    public Juice juice;
+    public double amount = 0.0;
+
+    //Density
     public double density;
 
+    //Light
+    public double lightAmount;
+
+
+    //Style
     public Color baseColor = Color.black;
-    //public Color baseColor;
 
 
-    public WorldTile(World world_, int id_, Vector2Int pos, double dist)
+    // *** I N I T I A L I Z A T I O N
+
+    public WorldTile(World world_, ColonyManager col_, Vector2Int pos)
     {
+        //references
         world = world_;
+        colonyManager = col_;
 
-        id = id_;
         position = pos;
-        distance = dist;
-        resource = 0.0;
+
+        //Get distance from center (value between 0-1)
+        double xx = pos.x - Settings.worldSize / 2.0;
+        double yy = pos.y - Settings.worldSize / 2.0;
+        double dist = Math.sqrt(xx*xx+yy*yy);
+
+        distance = Math.min(Settings.worldSize/2.0, dist) / (Settings.worldSize / 2.0);
+
+        //Angle
+        angle = Math.atan2(yy,xx);
+
+        //Calculate light vector ratios
+
+
     }
 
-    public void SetDensity(double noiseAmount)
+
+    public void SetDensity(double density_)
     {
-        density = distance *  (0.98 + noiseAmount);
-        density = Math.min(Math.max(density,0.0),1.0);
+        //System.out.println(density_);
 
-        baseColor = Library.LerpColor(density,world.baseColor ,world.mainColor);
+        density = density_;
+        baseColor = Library.LerpColor(1.0 - density, Settings.darkBackgroundColor, Settings.lightBackgroundColor);
     }
+
+
+
+
+    public void SetLightAmount(double lightAmount_)
+    {
+        lightAmount = lightAmount_;
+
+    }
+
+    public void AddJuice(double newAmount)
+    {
+        amount += newAmount;
+        amount = Library.Clamp(amount, 0.0, 1.0);
+
+        if (amount == 0.0)
+            id = 0;
+    }
+
+    public void AddJuice(Juice newJuice, double newAmount)
+    {
+        juice = newJuice;
+        amount += newAmount;
+        amount = Library.Clamp(amount, 0.0, 1.0);
+        id = 1;
+    }
+
 
     public void SpreadTile(WorldTile[][] oldTiles)
     {
-        int x = position.x;
-        int y = position.y;
+        //Get tile data
+        WorldTile old = oldTiles[position.x][position.y];
+        double[][] fractions = GetSpreadFractions(oldTiles);
 
+        //Remove amount from original cell
+        double toSpread = old.amount * (1.0 - juice.viscosity);
+
+
+        //Spread the juice
+        for (int j = position.y - 1; j < position.y + 2; j++) {
+            for (int i = position.x - 1; i < position.x + 2; i++) {
+
+                //Avoid colony tiles
+                if (oldTiles[i][j].id != 2) {
+                    //Get current coordinate
+                    int xx = i - position.x + 1;
+                    int yy = j - position.y + 1;
+
+                    //Get amount for tile based on free space
+                    double newAmount = toSpread * fractions[xx][yy];
+                    world.tiles[i][j].AddJuice(juice,newAmount);
+                }
+            }
+        }
+
+        world.tiles[position.x][position.y].AddJuice(-toSpread * (1.0 + juice.decay));
+    }
+
+    double[][] GetSpreadFractions(WorldTile[][] oldTiles)
+    {
+        double[][] frac = new double[3][3];
         double totalVolume = 0.0;
-        double[][] fractions = new double[3][3];
-        double toSpread = (oldTiles[x][y].resource - oldTiles[x][y].colony.juice.spreadMin) * (1.0 - oldTiles[x][y].colony.juice.viscosity);
 
-        //Get total pressure
-        for (int j = y -1; j < y + 2; j++) {
-            for (int i = x -1; i < x + 2; i++) {
+        //Check neighbouring tiles
+        for (int j = position.y - 1; j < position.y + 2; j++) {
+            for (int i = position.x - 1; i < position.x + 2; i++) {
 
-                //noot
-                int xx = i - x + 1;
-                int yy = j - y + 1;
+                //Get current index
+                int xx = i - position.x + 1;
+                int yy = j - position.y + 1;
 
                 //Check if colony tile
-                if(oldTiles[i][j].id == 2)
-                {
-                    fractions[xx][yy] = 0.0;
+                if (oldTiles[i][j].id == 2) {
+                    frac[xx][yy] = 0.0;
                     continue;
                 }
 
+                double dd = oldTiles[i][j].density;
+
+
                 //Get free space in tile
-                double volume = oldTiles[i][j].density - oldTiles[i][j].resource;
+                double volume = Math.pow(dd, juice.volatility) - oldTiles[i][j].amount;
+                volume = Math.max(volume,0.0001);
+
                 totalVolume += volume;
-                fractions[xx][yy] = volume;
+                frac[xx][yy] = volume;
             }
         }
 
-        //System.out.println(totalVolume);
+        if(totalVolume == 0)
+            return frac;
 
-        world.tiles[x][y].resource -= toSpread;
-
-
-        //Spread
-        for (int j = y -1; j < y + 2; j++) {
-            for (int i = x -1; i < x + 2; i++) {
-
-                //Avoid colony tiles
-                if(oldTiles[i][j].id != 2)
-                {
-                    //Get amount for tile based on free space
-                    double newAmount = toSpread * fractions[i-x + 1][j-y+1] / totalVolume;
-                    world.tiles[i][j].resource += newAmount;
-
-                    if (world.tiles[i][j].id == 0)
-                    {
-                        world.tiles[i][j].id = 1;
-                        world.tiles[i][j].colony = colony;
-                    }
-                }
+        //divide by total volume
+        for (int j = 0; j < 3; j++)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                frac[i][j] /= totalVolume;
             }
         }
 
-
+        return frac;
     }
 
     public Color GetColor()
     {
-        if (colony == null)
-            return baseColor;
-        else if (id == 1)
-            return Library.LerpColor(resource, baseColor, colony.juice.mainColor);
-        else
-            return colony.color;
+        switch(id)
+        {
+            case 0:
+            case 1 :
+                return Library.LerpColor(lightAmount * Settings.lightIntensity, baseColor, Settings.lightColor);
+            default:
+                return Color.white;
+        }
     }
 
 
