@@ -1,6 +1,7 @@
 package com.CellularEcosystem.Objects;
 
 import com.CellularEcosystem.Controller.Library;
+import com.CellularEcosystem.Controller.MainController;
 import com.CellularEcosystem.Controller.Settings;
 import com.CellularEcosystem.World.Colony;
 import com.CellularEcosystem.World.ColonyManager;
@@ -22,8 +23,11 @@ public class WorldTile
      */
     public int id;
     Vector2Int position;
+    public Vector2Int screenPosition;
     public double distance; // from center
     public double angle; //from center
+    boolean even;
+    double randomLightAngle;
 
     //Juice
     public Juice juice;
@@ -33,6 +37,7 @@ public class WorldTile
     public double density;
 
     //Light
+    public double baseLightAmount = 0;
     public double lightAmount;
 
 
@@ -42,27 +47,28 @@ public class WorldTile
 
     // *** I N I T I A L I Z A T I O N
 
-    public WorldTile(World world_, ColonyManager col_, Vector2Int pos)
+    public WorldTile(World world_, ColonyManager col_, Vector2Int pos, Vector2Int screenPosition_)
     {
         //references
         world = world_;
         colonyManager = col_;
 
         position = pos;
+        screenPosition = screenPosition_;
+        even = (position.x + position.y) % 2 == 0;
 
         //Get distance from center (value between 0-1)
         double xx = pos.x - Settings.worldSize / 2.0;
         double yy = pos.y - Settings.worldSize / 2.0;
         double dist = Math.sqrt(xx*xx+yy*yy);
 
-        distance = Math.min(Settings.worldSize/2.0, dist) / (Settings.worldSize / 2.0);
+        distance = Math.min(Settings.worldSize / 2.0, dist) / (Settings.worldSize / 2.0);
 
         //Angle
         angle = Math.atan2(yy,xx);
 
         //Calculate light vector ratios
-
-
+        randomLightAngle = Math.random() * Math.PI * 2.0 * Settings.lightRandomness;
     }
 
 
@@ -177,16 +183,18 @@ public class WorldTile
         return frac;
     }
 
-    public Color GetColor()
+    public Color GetLightColor()
     {
-        switch(id)
-        {
-            case 0:
-            case 1 :
-                return Library.LerpColor(lightAmount * Settings.lightIntensity, baseColor, Settings.lightColor);
-            default:
-                return Color.white;
-        }
+        double lightMod;
+        double ang = MainController.lightFadeAngle + randomLightAngle;
+
+        if(even)
+            lightMod = Math.abs(Math.sin(ang));
+        else
+            lightMod = Math.abs(Math.cos(ang));
+
+
+        return Library.LerpColor(lightMod * lightAmount * Settings.lightIntensity, baseColor, Settings.lightColor);
     }
 
 

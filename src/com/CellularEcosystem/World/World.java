@@ -33,6 +33,7 @@ public class World
         worldUnitVector = new Vector2(worldUnit,worldUnit);
 
         SetupWorldTiles();
+
         worldNoise = new WorldNoise(controller, this);
         colonyManager = new ColonyManager(controller, this );
 
@@ -54,8 +55,12 @@ public class World
                 //Get tile position
                 Vector2Int pos = new Vector2Int(i,j);
 
+                //Get screen coordinates
+                Vector2 pp = new Vector2(i - Settings.worldSize / 2.0,j - Settings.worldSize / 2.0);
+                Vector2Int screenPos = Camera.WorldToScreen(pp);
+
                 //Instantiate new tile
-                tiles[i][j] = new WorldTile(this,colonyManager,pos);
+                tiles[i][j] = new WorldTile(this,colonyManager,pos, screenPos);
             }
         }
     }
@@ -64,7 +69,6 @@ public class World
     {
         worldNoise.Update();
         colonyManager.Update();
-
         //boidManager.Update();
     }
 }

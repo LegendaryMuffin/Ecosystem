@@ -7,6 +7,8 @@ public class Settings
 {
     //General
     public static boolean fullscreen = false;
+    public static int gameTickLength = 90;
+    public static double targetFrameRate = 1000.0 / 60.0;
 
 
     //Debug
@@ -17,32 +19,35 @@ public class Settings
 
 
     //World parameters
-    public static int worldSize = 128;
+    public static int worldSize = 129;
 
 
     //Density noise
     public static double densityNoiseAmplitude = 0.6;
-    public static double densityNoiseSize = 0.28;
+    public static double densityNoiseSize = 0.1;
     public static int densityNoiseLayers = 3;
-    public static double densityNoisePersistence = 0.26;
+    public static double densityNoisePersistence = 0.22;
     public static double densityNoiseLacunarity = 1.6;
     public static double densityNoiseGamma = -0.3; //adjusts final density to better fit certain range
 
 
     //Light parameters
-    public static double lightCycleAmplitude = 0.5; //Light variation amount DAY/NIGHT
+    public static double lightCycleAmplitude = 0.4; //Light variation amount DAY/NIGHT
     public static boolean lightRotationClockwise = true;
-    public static int lightResolution = 16;
-    public static double lightResolutionRandomness = 0.5;
-    public static double lightRadius = 0.6; // 1.0 = worldSize / 2.0
-    public static double lightIntensity = 0.2;
+    public static double lightRadius = 1.0; // 1.0 = worldSize / 2.0
+    public static double lightIntensity = 0.4;
+    public static double lightFadeTime = 130.0;
+    public static double lightRandomness = 0.0;
+    public static double lightFalloffMultiplier = 1.0;
+    public static double lightCutoff = 0.0;
+
     //Light noise
-    public static double lightNoiseAmplitude = 0.5;
-    public static double lightNoiseSize = 0.2; //radius
-    public static int lightNoiseLayers = 1;
-    public static double lightNoisePersistence = 0.1; //how much it impacts the radius
-    public static double lightNoiseLacunarity = 1.3; // how it changes on the texture
-    public static double lightNoiseGamma = 1.0;
+    public static double lightNoiseAmplitude = 1.3;
+    public static double lightNoiseSize = 0.03; //radius
+    public static int lightNoiseLayers = 3;
+    public static double lightNoisePersistence = 0.24; //how much it impacts the radius
+    public static double lightNoiseLacunarity = 1.4; // how it changes on the texture
+    public static double lightNoiseGamma = 0.0;
 
 
     //Colony parameters
@@ -56,7 +61,7 @@ public class Settings
     public static double baseMinimumSpread = 0.3;
     public static double minimumSpreadVariation = 0.26;
     public static double baseVolatility = 3;
-    public static double volatilyVariation = 1.0;
+    public static double volatilityVariation = 1.0;
     public static double baseDecay = 0.01;
     public static double decayVariation = 0.005;
 
@@ -65,13 +70,10 @@ public class Settings
 
 
     //Color settings
-    public static Color darkBackgroundColor = new Color(12,12,12);
-    public static Color lightBackgroundColor = new Color(55,50,50);
+    public static Color darkBackgroundColor = new Color(0,20,20);
+    public static Color lightBackgroundColor = new Color(16,60,40);
 
-    public static Color lightColor = new Color(255,220,220);
-
-
-
+    public static Color lightColor = new Color(255,240,190);
 
 
 

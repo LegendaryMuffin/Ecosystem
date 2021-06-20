@@ -6,12 +6,13 @@ import com.CellularEcosystem.World.*;
 public class MainController implements Runnable
 {
     //Time
+    static long startTime;
     public static long currentTime;
+    public static long elapsedTime;
     public static int ticks;
-    public static double targetFrameRate = 1000.0 / 60.0;
 
     public static int gameTicks = 0;
-    int gameTickLength = 90; //ticks per game second -> 1.5s
+    public static double lightFadeAngle = 0.0;
 
     //Class references
     public MouseInput mouse;
@@ -29,11 +30,6 @@ public class MainController implements Runnable
         //Setup main classes
         world = new World(this);
         canvas = new MainCanvas(this, world);
-
-
-        //Represent number of horizontal world units in camera view
-        Camera.SetCameraSize();
-
     }
 
 
@@ -41,7 +37,8 @@ public class MainController implements Runnable
     public void run()
     {
         //Setup main Update loop with target 60 fps
-        long lastUpdateTime = System.currentTimeMillis();
+        startTime = System.currentTimeMillis();
+        long lastUpdateTime = startTime;
         double deltaTime = 0.0;
         ticks = 0;
 
@@ -50,16 +47,17 @@ public class MainController implements Runnable
             currentTime = System.currentTimeMillis();
             deltaTime += (currentTime - lastUpdateTime);
             lastUpdateTime = currentTime;
+            elapsedTime = currentTime - startTime;
 
 
-            if (deltaTime >= targetFrameRate)
+            if (deltaTime >= Settings.targetFrameRate)
             {
 
                 ticks++;
                 deltaTime = 0.0;
 
                 //Update game time
-                if (ticks % gameTickLength == 0)
+                if (ticks % Settings.gameTickLength == 0)
                     gameTicks++;
 
                 Update();
@@ -69,6 +67,10 @@ public class MainController implements Runnable
 
     void Update()
     {
+        //Update time
+        double nn = Settings.lightFadeTime;
+        lightFadeAngle = ((currentTime - startTime) / nn % nn) / nn * 2.0 * Math.PI;
+
         world.Update();
         canvas.repaint();
     }
@@ -86,7 +88,7 @@ public class MainController implements Runnable
 
     public double GetTimeAngle()
     {
-        int cycleTicks = gameTickLength * 60;
+        int cycleTicks = Settings.gameTickLength * 60;
 
         double pc = (double)(ticks % cycleTicks) / cycleTicks;
 

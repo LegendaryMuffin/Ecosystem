@@ -52,7 +52,7 @@ public class Colony {
             double minimumSpread = Settings.baseMinimumSpread + (Math.random() * 2.0 - 1.0) * Settings.minimumSpreadVariation;
 
             //Determines how much juice is impacted by cell density
-            double volatility = Settings.baseVolatility + (Math.random() * 2.0 - 1.0) * Settings.volatilyVariation;
+            double volatility = Settings.volatilityVariation + (Math.random() * 2.0 - 1.0) * Settings.volatilityVariation;
 
             double decay = Settings.baseDecay + (Math.random() * 2.0 - 1.0) * Settings.decayVariation;
 
@@ -86,7 +86,7 @@ public class Colony {
                     continue;
 
                 //Add resource
-                tile.amount += productionRate / MainController.targetFrameRate;
+                tile.amount += productionRate / Settings.targetFrameRate;
                 tile.amount = Math.min(tile.amount,tile.density);
 
                 //Adjust juice reference

@@ -16,11 +16,7 @@ public class MainCanvas extends JComponent
     MainController controller;
     World world;
 
-    BasicStroke colonyStroke;
-
     DebugDraw debugDraw;
-
-    int margin = 1;
 
     //Transforms to draw (May contain rectangles, triangles...)
     static ArrayList<Transform> drawTransforms;
@@ -31,11 +27,6 @@ public class MainCanvas extends JComponent
         //References
         controller = controller_;
         world = world_;
-
-        colonyStroke = new BasicStroke(2);
-
-        //Set margin
-        margin = (int)Math.floor(Main.Screen.height - World.worldUnit * Settings.worldSize);
 
         debugDraw = new DebugDraw(controller);
 
@@ -88,38 +79,68 @@ public class MainCanvas extends JComponent
     void DrawWorldTiles(Graphics g)
     {
         Graphics2D g2d = (Graphics2D)g;
+        int unit = (int)(Math.ceil(World.worldUnit));
+
+        double dd = Settings.gameTickLength / 4.0;
+        double pp = (MainController.elapsedTime % dd) / dd;
+        boolean noot = Math.sin(pp) >= 0.0;
+
         for(int j = 0; j < Settings.worldSize; j++)
         {
             for(int i = 0; i < Settings.worldSize; i++)
             {
-                Vector2 pp = new Vector2(i - Settings.worldSize / 2.0,j - Settings.worldSize / 2.0);
-                Vector2Int screenPos = Camera.WorldToScreen(pp);
+                WorldTile tile = world.tiles[i][j];
+                boolean even = (i + j) % 2 == 0;
 
-                int nn = (int)Math.ceil(World.worldUnit);
-
-                //Draw tile
-                double amount = world.tiles[i][j].amount;
-                int xx = (int)(screenPos.x - World.worldUnit) + margin + 1;
-                int yy = (int)(screenPos.y - World.worldUnit) + margin + 1;
+                //Draw base tile
+                g.setColor(tile.baseColor);
+                g.fillRect(tile.screenPosition.x,tile.screenPosition.y, unit,unit);
 
 
-                g.setColor(world.tiles[i][j].GetColor());
-                g.fillRect(xx,yy, nn,nn);
+                if (tile.lightAmount > Settings.lightCutoff)
+                {
+                    //Draw light
+                    double pc = Math.pow(tile.lightAmount,Settings.lightFalloffMultiplier) * 0.5;
+                    float ww = (float)Math.ceil(pc * unit * 0.58);
+                    int offset = (int)(ww / 2.0);
+
+                    g.setColor(tile.GetLightColor());
+                    g2d.setColor(tile.GetLightColor());
+                    BasicStroke stroke = new BasicStroke(ww);
+                    g2d.setStroke(stroke);
+
+                    int posX = tile.screenPosition.x + offset ;
+                    int posY = tile.screenPosition.y + offset;
+                    int tt0 = (int)Math.ceil(unit - ww);
+                    int tt1 = (int)Math.ceil(unit * pc * 2.0);
+
+
+                    if (noot)
+                    {
+                        if (even)
+                            g.drawRect(posX,posY,tt0,tt0);
+                        else
+                            g.fillRect(posX-1,posY-1,tt1,tt1);
+                    }
+                    else
+                    {
+                        if (even)
+                            g.fillRect(posX-1,posY-1,tt0,tt0);
+                        else
+                            g.drawRect(posX,posY,tt1,tt1);
+                    }
+                }
+
+
 
                 //Draw juice
-                if(amount > 0.05)
+                double amount = world.tiles[i][j].amount;
+
+                if(amount > 0.01)
                 {
-                    int mod = (int)(amount * World.worldUnit);
-
-
-                    if ((i + j) % 2 == 0)
-                        g2d.setColor(world.tiles[i][j].juice.mainColor);
-                    else
-                        g2d.setColor(world.tiles[i][j].juice.secondaryColor);
-
-                    colonyStroke = new BasicStroke(mod);
-                    g2d.setStroke(colonyStroke);
-                    g2d.drawRect(xx, yy, nn-2,nn-2);
+                    int radius = (int)Math.ceil(unit * amount);
+                    g2d.setColor(world.tiles[i][j].juice.mainColor);
+                    g2d.fillOval(tile.screenPosition.x, tile.screenPosition.y, radius,radius);
                 }
             }
         }

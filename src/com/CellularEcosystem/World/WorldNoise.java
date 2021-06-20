@@ -11,6 +11,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.Set;
 
 public class WorldNoise {
 
@@ -26,7 +27,7 @@ public class WorldNoise {
     int noiseHeight;
 
     //Light noise
-    Vector2[] lightVectors;
+    double[] lightVectorMagnitudes;
     double[] lightVectorAngles;
 
 
@@ -47,12 +48,30 @@ public class WorldNoise {
         UpdateLight();
     }
 
+    void UpdateLight()
+    {
+        double tt = 24.0 * 60.0 * Settings.gameTickLength; // Time for an entire day
+
+        double cycleMod = MainController.elapsedTime % tt * Math.PI * 2.0;
+        cycleMod = Math.sin(cycleMod) * Settings.lightCycleAmplitude;
+
+        //Update light according to cycle
+        for(int j = 0; j < Settings.worldSize; j++)
+        {
+            for (int i = 0; i < Settings.worldSize; i++)
+            {
+                world.tiles[i][j].lightAmount = world.tiles[i][j].baseLightAmount * (1.0 + cycleMod);
+                world.tiles[i][j].lightAmount = Library.Clamp(world.tiles[i][j].lightAmount,0.0,2.0);
+            }
+        }
+    }
+
     // * * * <  T E X T U R E  > * * *
 
     void SetupNoiseMap()
     {
         //Get Texture
-        try { noiseTexture = ImageIO.read(new File("src/sprites/noiseTexture.png"));}
+        try { noiseTexture = ImageIO.read(new File("src/sprites/perlin.png"));}
         catch (IOException e) {e.printStackTrace();}
 
         noiseWidth = noiseTexture.getWidth();
@@ -139,118 +158,55 @@ public class WorldNoise {
 
     void SetupLightNoise()
     {
-        lightVectors = new Vector2[Settings.lightResolution];
-        lightVectorAngles = new double[Settings.lightResolution];
-
         //Random position on noiseMap
-        double amp = (1.0 - Settings.lightNoiseSize * 2.0);
-        int noiseX = (int)(Math.random() * amp + Settings.lightNoiseSize);
-        int noiseY = (int)(Math.random() * amp + Settings.lightNoiseSize);
-
-        for(int k = 0; k < Settings.lightResolution; k++)
-        {
-            //Get angle
-            double slice = Math.random() * Math.PI * 2.0 / Settings.lightResolution;
-            double rng = Math.random() * Settings.lightResolutionRandomness;
-            double ang = slice * k + rng;
-
-            //Get vector noise positions
-            double lightNoise = GetLightNoise(noiseX, noiseY, ang);
-
-            double xx = Math.cos(ang) * Settings.lightRadius * lightNoise;
-            double yy = Math.sin(ang) * Settings.lightRadius * lightNoise;
-
-            lightVectors[k] = new Vector2(xx,yy);
-            lightVectorAngles[k] = ang;
-        }
-    }
-
-    double GetLightNoise(int noiseX, int noiseY, double ang)
-    {
-        double lightAmount = 0.0;
-        double amp = Settings.lightNoiseAmplitude;
-
-        //Get noise texture coordinates
-        double xx = Math.cos(ang) * Settings.lightNoiseSize;
-        double yy = Math.sin(ang) * Settings.lightNoiseSize;
+        int noiseX = (int)(Math.random() * (noiseWidth-1));
+        int noiseY = (int)(Math.random() * (noiseHeight-1));
 
 
-        for(int k = 0; k < Settings.lightNoiseLayers; k++)
-        {
-            xx *= Settings.lightNoiseLacunarity;
-            yy *= Settings.lightNoiseLacunarity;
-
-            int x = (int)Math.min(xx,noiseWidth-1) + noiseX;
-            int y = (int)Math.min(yy,noiseHeight-1) + noiseY;
-
-            //Get noise amount
-            lightAmount += noiseMap[x][y] * amp;
-
-            //Apply modifiers
-            amp *= Settings.lightNoisePersistence;
-        }
-
-        //return total final light
-        double light = lightAmount + Settings.lightNoiseGamma;
-        return Math.min(Math.max(light, 0.0), 1.0);
-    }
-
-
-    void UpdateLight()
-    {
-        //Update light according to cycle
+        //Setup base light map
         for(int j = 0; j < Settings.worldSize; j++)
         {
             for (int i = 0; i < Settings.worldSize; i++)
             {
                 WorldTile tile = world.tiles[i][j];
 
+                tile.baseLightAmount = GetLightNoise(noiseX,noiseY,tile.angle, tile.distance) * Math.pow(1.0-tile.distance,Settings.lightFalloffMultiplier);
+                tile.lightAmount = tile.baseLightAmount;
 
-
-
-                tile.lightAmount = GetLightAmount(tile.angle, tile.distance);
             }
         }
     }
 
-    double GetLightAmount(double angle, double dist)
+    double GetLightNoise(int noiseX, int noiseY, double ang,double distance)
     {
-        double lightMod = 1.0;
-        double currentAng = 0.0;
+        double lightAmount = 0.0;
+        double amp = Settings.lightNoiseAmplitude;
 
-        for(int k = 0; k < Settings.lightResolution - 1; k++)
+        //Get noise texture coordinates
+        double xx = Math.cos(ang) * amp * Settings.lightNoiseSize + noiseX;
+        double yy = Math.sin(ang) * amp * Settings.lightNoiseSize + noiseY;
+
+
+        for(int k = 0; k < Settings.lightNoiseLayers; k++)
         {
-            currentAng += lightVectorAngles[k];
+            int x = (int)Math.floor(xx * noiseWidth % noiseWidth);
+            int y = (int)Math.floor(yy * noiseHeight % noiseHeight);
 
-            if (angle <= currentAng)
-            {
-                double pp = (currentAng - angle);
-                double pc = 0.0;
+            //Get noise amount
+            lightAmount += noiseMap[x][y] * amp;
 
-                if (k == 0)
-                {
-                    pc =  angle / currentAng;
+            xx *= Settings.lightNoiseLacunarity;
+            yy *= Settings.lightNoiseLacunarity;
 
-                }
-                else
-                {
-                    pc =  (angle - lightVectorAngles[k-1]) / (currentAng - lightVectorAngles[k-1]);
-                }
-
-                double xx = lightVectors[k].x * pc + lightVectors[k+1].x * (1.0 - pc);
-                double yy = lightVectors[k].y * pc + lightVectors[k+1].y * (1.0 - pc);
-
-                double magn = Math.sqrt(xx * xx + yy * yy);
-
-
-                return (1.0 - dist) ;//;* magn;
-            }
-
+            //Apply modifiers
+            amp *= Settings.lightNoisePersistence;
         }
 
+        //return total final light
+        double light = (lightAmount + Settings.lightNoiseGamma) * Settings.lightRadius;
 
 
-        return lightMod;
+        return Math.min(Math.max(light, 0.0), 1.0) * Math.pow(1.0 - distance,Settings.lightFalloffMultiplier);
     }
 
 }
