@@ -27,7 +27,7 @@ public class WorldTile
     public double distance; // from center
     public double angle; //from center
     boolean even;
-    double randomLightAngle;
+    public double random;
 
     //Juice
     public Juice juice;
@@ -68,7 +68,7 @@ public class WorldTile
         angle = Math.atan2(yy,xx);
 
         //Calculate light vector ratios
-        randomLightAngle = Math.random() * Math.PI * 2.0 * Settings.lightRandomness;
+        random = Math.random();
     }
 
 
@@ -186,7 +186,9 @@ public class WorldTile
     public Color GetLightColor()
     {
         double lightMod;
-        double ang = MainController.lightFadeAngle + randomLightAngle;
+        double ang = MainController.lightFadeAngle +  random * Math.PI * 2.0 * Settings.lightRandomness;
+        ang += random * Settings.lightIntensity + Settings.lightRandomness;
+
 
         if(even)
             lightMod = Math.abs(Math.sin(ang));

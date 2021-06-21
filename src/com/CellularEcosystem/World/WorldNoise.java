@@ -50,9 +50,9 @@ public class WorldNoise {
 
     void UpdateLight()
     {
-        double tt = 24.0 * 60.0 * Settings.gameTickLength; // Time for an entire day
+        int tt = 60 * Settings.gameTickLength / 2; // Time for an entire day
 
-        double cycleMod = MainController.elapsedTime % tt * Math.PI * 2.0;
+        double cycleMod = (MainController.ticks % tt) * Math.PI * 2.0;
         cycleMod = Math.sin(cycleMod) * Settings.lightCycleAmplitude;
 
         //Update light according to cycle
@@ -60,8 +60,12 @@ public class WorldNoise {
         {
             for (int i = 0; i < Settings.worldSize; i++)
             {
-                world.tiles[i][j].lightAmount = world.tiles[i][j].baseLightAmount * (1.0 + cycleMod);
-                world.tiles[i][j].lightAmount = Library.Clamp(world.tiles[i][j].lightAmount,0.0,2.0);
+                WorldTile tile = world.tiles[i][j];
+
+                double rr = 1.0 - Settings.lightRandomness + tile.random;
+                double ll = world.tiles[i][j].baseLightAmount * (1.0 + cycleMod) * rr;
+                ll = Library.Clamp(ll,0.0,1.0);
+                tile.lightAmount = ll;
             }
         }
     }

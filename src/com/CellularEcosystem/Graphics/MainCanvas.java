@@ -101,33 +101,34 @@ public class MainCanvas extends JComponent
                 {
                     //Draw light
                     double pc = Math.pow(tile.lightAmount,Settings.lightFalloffMultiplier) * 0.5;
-                    float ww = (float)Math.ceil(pc * unit * 0.58);
-                    int offset = (int)(ww / 2.0);
+                    int ww = (int)Math.round(pc * unit * 0.5);
 
                     g.setColor(tile.GetLightColor());
                     g2d.setColor(tile.GetLightColor());
                     BasicStroke stroke = new BasicStroke(ww);
                     g2d.setStroke(stroke);
 
-                    int posX = tile.screenPosition.x + offset ;
-                    int posY = tile.screenPosition.y + offset;
+                    int posX0 = tile.screenPosition.x + ww/2 ;
+                    int posY0 = tile.screenPosition.y + ww/2;
+                    int posX1 = tile.screenPosition.x + ww;
+                    int posY1 = tile.screenPosition.y + ww;
                     int tt0 = (int)Math.ceil(unit - ww);
-                    int tt1 = (int)Math.ceil(unit * pc * 2.0);
+                    int tt1 =(int) (pc * unit);//(int)Math.ceil(unit * pc * 2.0);
 
 
                     if (noot)
                     {
                         if (even)
-                            g.drawRect(posX,posY,tt0,tt0);
+                            g.drawRect(posX0,posY0,tt0,tt0);
                         else
-                            g.fillRect(posX-1,posY-1,tt1,tt1);
+                            g.fillRect(posX0,posY0,tt1,tt1);
                     }
                     else
                     {
                         if (even)
-                            g.fillRect(posX-1,posY-1,tt0,tt0);
+                            g.fillRect(posX0,posY0,tt0,tt0);
                         else
-                            g.drawRect(posX,posY,tt1,tt1);
+                            g.drawRect(posX0,posY0,tt1,tt1);
                     }
                 }
 

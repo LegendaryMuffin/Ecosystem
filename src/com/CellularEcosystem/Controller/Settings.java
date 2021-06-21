@@ -32,17 +32,17 @@ public class Settings
 
 
     //Light parameters
-    public static double lightCycleAmplitude = 0.4; //Light variation amount DAY/NIGHT
+    public static double lightCycleAmplitude = 0.9; //Light variation amount DAY/NIGHT
     public static boolean lightRotationClockwise = true;
     public static double lightRadius = 1.0; // 1.0 = worldSize / 2.0
     public static double lightIntensity = 0.4;
-    public static double lightFadeTime = 130.0;
+    public static double lightFadeTime = 200.0;
     public static double lightRandomness = 0.0;
     public static double lightFalloffMultiplier = 1.0;
     public static double lightCutoff = 0.0;
 
     //Light noise
-    public static double lightNoiseAmplitude = 1.3;
+    public static double lightNoiseAmplitude = 0.9;
     public static double lightNoiseSize = 0.03; //radius
     public static int lightNoiseLayers = 3;
     public static double lightNoisePersistence = 0.24; //how much it impacts the radius
