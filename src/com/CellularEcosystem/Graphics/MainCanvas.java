@@ -81,10 +81,6 @@ public class MainCanvas extends JComponent
         Graphics2D g2d = (Graphics2D)g;
         int unit = (int)(Math.ceil(World.worldUnit));
 
-        double dd = Settings.gameTickLength / 4.0;
-        double pp = (MainController.elapsedTime % dd) / dd;
-        boolean noot = Math.sin(pp) >= 0.0;
-
         for(int j = 0; j < Settings.worldSize; j++)
         {
             for(int i = 0; i < Settings.worldSize; i++)
@@ -93,44 +89,24 @@ public class MainCanvas extends JComponent
                 boolean even = (i + j) % 2 == 0;
 
                 //Draw base tile
-                g.setColor(tile.baseColor);
-                g.fillRect(tile.screenPosition.x,tile.screenPosition.y, unit,unit);
+                g2d.setColor(tile.baseColor);
+                g2d.fillRect(tile.screenPosition.x,tile.screenPosition.y, unit,unit);
 
 
                 if (tile.lightAmount > Settings.lightCutoff)
                 {
                     //Draw light
-                    double pc = Math.pow(tile.lightAmount,Settings.lightFalloffMultiplier) * 0.5;
-                    int ww = (int)Math.round(pc * unit * 0.5);
+                    double pc = Math.pow(tile.lightAmount,Settings.lightFalloffMultiplier);
+                    int ww = (int)Math.round((unit + 1) * pc * 0.5);
 
-                    g.setColor(tile.GetLightColor());
                     g2d.setColor(tile.GetLightColor());
-                    BasicStroke stroke = new BasicStroke(ww);
-                    g2d.setStroke(stroke);
 
-                    int posX0 = tile.screenPosition.x + ww/2 ;
-                    int posY0 = tile.screenPosition.y + ww/2;
-                    int posX1 = tile.screenPosition.x + ww;
-                    int posY1 = tile.screenPosition.y + ww;
-                    int tt0 = (int)Math.ceil(unit - ww);
-                    int tt1 =(int) (pc * unit);//(int)Math.ceil(unit * pc * 2.0);
+                    int posX0 = (tile.screenPosition.x + tile.lightOffset.x) + unit / 2 - ww - 1;
+                    int posY0 = (tile.screenPosition.y + tile.lightOffset.y) + unit /2 - ww - 1;
 
-
-                    if (noot)
-                    {
-                        if (even)
-                            g.drawRect(posX0,posY0,tt0,tt0);
-                        else
-                            g.fillRect(posX0,posY0,tt1,tt1);
-                    }
-                    else
-                    {
-                        if (even)
-                            g.fillRect(posX0,posY0,tt0,tt0);
-                        else
-                            g.drawRect(posX0,posY0,tt1,tt1);
-                    }
+                    g2d.fillRect(posX0,posY0,ww * 2,ww * 2);
                 }
+
 
 
 
@@ -139,9 +115,21 @@ public class MainCanvas extends JComponent
 
                 if(amount > 0.01)
                 {
-                    int radius = (int)Math.ceil(unit * amount);
+                    //Get level
+                    for (int k = 1; k < Settings.juiceStages; k++)
+                    {
+                        if (amount > ((double)k / Settings.juiceStages))
+                        {
+                            float tt = (float)Math.ceil((double)k / Settings.juiceStages) * 0.5f;
+                            g2d.setStroke(new BasicStroke(tt));
+
+                        }
+
+                    }
+
+
                     g2d.setColor(world.tiles[i][j].juice.mainColor);
-                    g2d.fillOval(tile.screenPosition.x, tile.screenPosition.y, radius,radius);
+                    g2d.drawRect(tile.screenPosition.x, tile.screenPosition.y, unit-1,unit-1);
                 }
             }
         }

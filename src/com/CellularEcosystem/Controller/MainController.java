@@ -3,16 +3,21 @@ package com.CellularEcosystem.Controller;
 import com.CellularEcosystem.Graphics.*;
 import com.CellularEcosystem.World.*;
 
+import java.util.Set;
+
 public class MainController implements Runnable
 {
     //Time
     static long startTime;
     public static long currentTime;
     public static long elapsedTime;
-    public static int ticks;
 
+    public static int ticks;
     public static int gameTicks = 0;
-    public static double lightFadeAngle = 0.0;
+
+    public int totalMinutes = 0;
+    public static double dayProgress = 0;
+    public static double dayLength; // in ticks
 
     //Class references
     public MouseInput mouse;
@@ -40,25 +45,23 @@ public class MainController implements Runnable
         startTime = System.currentTimeMillis();
         long lastUpdateTime = startTime;
         double deltaTime = 0.0;
+
         ticks = 0;
+        dayLength = Settings.minuteLength * Settings.hourLength * Settings.dayLength * Settings.targetFrameRate;
 
         while(true)
         {
             currentTime = System.currentTimeMillis();
-            deltaTime += (currentTime - lastUpdateTime);
+            deltaTime += (currentTime - lastUpdateTime) * Settings.timeMultiplier;
             lastUpdateTime = currentTime;
             elapsedTime = currentTime - startTime;
 
 
             if (deltaTime >= Settings.targetFrameRate)
             {
-
                 ticks++;
-                deltaTime = 0.0;
 
-                //Update game time
-                if (ticks % Settings.gameTickLength == 0)
-                    gameTicks++;
+                deltaTime = 0.0;
 
                 Update();
             }
@@ -67,31 +70,31 @@ public class MainController implements Runnable
 
     void Update()
     {
-        //Update time
-        double nn = Settings.lightFadeTime;
-        lightFadeAngle = ((currentTime - startTime) / nn % nn) / nn * 2.0 * Math.PI;
+        UpdateTime();
 
         world.Update();
         canvas.repaint();
     }
 
-    public String GetTimeString()
+    void UpdateTime()
     {
-        int dayLength = 60 * 24;
+        if (ticks % Settings.minuteLength == 0 && ticks != 0)
+            totalMinutes++;
 
-        int days = gameTicks / (60 * 24);
-        int hours = gameTicks % dayLength / 60;
-        int minutes = gameTicks - days * dayLength - hours * 60;
+        double dayTicks = (totalMinutes * Settings.minuteLength * Settings.targetFrameRate) % dayLength;
+        dayProgress = dayTicks / dayLength;
 
-        return days + " # " + hours + " : " + minutes;
     }
 
-    public double GetTimeAngle()
+    public String GetTimeString()
     {
-        int cycleTicks = Settings.gameTickLength * 60;
+        if (totalMinutes == 0)
+            return "";
 
-        double pc = (double)(ticks % cycleTicks) / cycleTicks;
+        int days = (totalMinutes / Settings.hourLength / Settings.dayLength);
+        int hours = (totalMinutes / Settings.hourLength) % Settings.hourLength;
 
-        return Math.PI * 2.0 * pc;
+        return " -< " + days + " >- " + " ( " + hours + " : " +  totalMinutes % Settings.minuteLength + " ) ";
+
     }
 }

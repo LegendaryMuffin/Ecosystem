@@ -17,12 +17,6 @@ public class Colony {
 
     public Juice juice;
 
-    //Resource properties
-    double productionRate = 1.0;
-
-    public Color color = Color.magenta;
-
-
     public Colony(ColonyManager colonyManager_, Vector2Int spawnPosition)
     {
         //References
@@ -66,8 +60,7 @@ public class Colony {
 
     public void Update()
     {
-        if (MainController.ticks % 30 == 0)
-            ProduceResource();
+        ProduceResource();
     }
 
     void ProduceResource()
@@ -86,8 +79,9 @@ public class Colony {
                     continue;
 
                 //Add resource
-                tile.amount += productionRate / Settings.targetFrameRate;
-                tile.amount = Math.min(tile.amount,tile.density);
+                double newAmount = Settings.baseProductionRate / Settings.targetFrameRate;
+                //double extra = Math.max(newAmount - tile.density,0.0);
+                tile.amount += newAmount;
 
                 //Adjust juice reference
                 if (tile.amount < 0.001)

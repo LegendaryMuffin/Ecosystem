@@ -1,6 +1,7 @@
 package com.CellularEcosystem.World;
 
 import com.CellularEcosystem.Controller.*;
+import com.CellularEcosystem.Objects.ColorPalette;
 import com.CellularEcosystem.Objects.Vector2;
 import com.CellularEcosystem.Objects.Vector2Int;
 import com.CellularEcosystem.Objects.WorldTile;
@@ -15,8 +16,6 @@ public class World
     //Subclasses
     WorldNoise worldNoise;
     ColonyManager colonyManager;
-    //BoidManager boidManager;
-
 
     public static double worldUnit;
     public static Vector2 worldUnitVector;
@@ -67,8 +66,39 @@ public class World
 
     public void Update()
     {
-        worldNoise.Update();
+        UpdateLight();
+
+        //worldNoise.Update();
         colonyManager.Update();
         //boidManager.Update();
+    }
+
+    void UpdateLight()
+    {
+        double angMod = (MainController.dayProgress * Math.PI * 2.0 * Settings.lightRotationsPerDay) % (Math.PI * 2.0);
+
+        if(Settings.lightRotationClockwise)
+            angMod = Math.PI * 2.0 - angMod;
+
+        double cycleMod = Math.sin(angMod);
+
+
+        //Update light according to cycle
+        for(int j = 0; j < Settings.worldSize; j++)
+        {
+            for (int i = 0; i < Settings.worldSize; i++)
+            {
+                WorldTile tile = tiles[i][j];
+
+                double tileBase = worldNoise.GetLightNoise(tile.angle + angMod, tile.distance);
+
+                double randomness = 1.0 - Settings.lightAmountRandomness + tile.random;
+                double light = tileBase * (1.0 + cycleMod * Settings.lightCycleAmplitude) * randomness;
+
+                light = Library.Clamp(light * Settings.lightGammaMultiplier,0.0,1.0);
+
+                tile.lightAmount = light;
+            }
+        }
     }
 }

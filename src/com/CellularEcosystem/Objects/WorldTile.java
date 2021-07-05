@@ -16,18 +16,24 @@ public class WorldTile
     World world;
     ColonyManager colonyManager;
 
+
     /*ID****
     0: empty
     1: juice tile
     2: colony tile
      */
+
+
+    //General
     public int id;
+    boolean even;
+    public double random;
+
+    //Position
     Vector2Int position;
     public Vector2Int screenPosition;
     public double distance; // from center
     public double angle; //from center
-    boolean even;
-    public double random;
 
     //Juice
     public Juice juice;
@@ -39,6 +45,7 @@ public class WorldTile
     //Light
     public double baseLightAmount = 0;
     public double lightAmount;
+    public Vector2Int lightOffset;
 
 
     //Style
@@ -68,7 +75,13 @@ public class WorldTile
         angle = Math.atan2(yy,xx);
 
         //Calculate light vector ratios
-        random = Math.random();
+        random = Math.random() * Settings.lightAmountRandomness;
+
+        //Light offset
+        int randX = (int)Math.round(Settings.lightPositionRandomness * (Math.random() - 0.5) * World.worldUnit);
+        int randY = (int)Math.round(Settings.lightPositionRandomness * (Math.random() - 0.5) * World.worldUnit);
+
+        lightOffset = new Vector2Int(randX,randY);
     }
 
 
@@ -77,7 +90,7 @@ public class WorldTile
         //System.out.println(density_);
 
         density = density_;
-        baseColor = Library.LerpColor(1.0 - density, Settings.darkBackgroundColor, Settings.lightBackgroundColor);
+        baseColor = Library.LerpColor(1.0 - density, Settings.backgroundColors[0], Settings.backgroundColors[1]);
     }
 
 
@@ -88,6 +101,7 @@ public class WorldTile
         lightAmount = lightAmount_;
 
     }
+
 
     public void AddJuice(double newAmount)
     {
@@ -185,18 +199,10 @@ public class WorldTile
 
     public Color GetLightColor()
     {
-        double lightMod;
-        double ang = MainController.lightFadeAngle +  random * Math.PI * 2.0 * Settings.lightRandomness;
-        ang += random * Settings.lightIntensity + Settings.lightRandomness;
+        double pc = MainController.dayProgress * Math.PI * 2.0;
+        double lightMod = (1.0 + Math.cos(pc) * Settings.lightIntensity * 0.5f);
 
-
-        if(even)
-            lightMod = Math.abs(Math.sin(ang));
-        else
-            lightMod = Math.abs(Math.cos(ang));
-
-
-        return Library.LerpColor(lightMod * lightAmount * Settings.lightIntensity, baseColor, Settings.lightColor);
+        return Library.LerpColor(lightAmount * Settings.lightIntensity * (lightMod), baseColor, Settings.lightColor);
     }
 
 

@@ -14,9 +14,6 @@ public class ColonyManager
     MainController controller;
     World world;
 
-    //Spawn settings
-    double spawnDist = 0.85;
-
     //Colonies
     public ArrayList<Colony> colonies;
 
@@ -38,8 +35,8 @@ public class ColonyManager
 
         //Get colony tile coordinate
         int nn = Settings.worldSize / 2;
-        int xx = (int)Math.floor((Math.cos(ang) * spawnDist * nn)) + nn;
-        int yy = (int)Math.floor((Math.sin(ang) * spawnDist * nn)) + nn;
+        int xx = (int)Math.floor((Math.cos(ang) * Settings.colonySpawnDistance * nn)) + nn;
+        int yy = (int)Math.floor((Math.sin(ang) * Settings.colonySpawnDistance * nn)) + nn;
 
         Vector2Int spawnPosition = new Vector2Int(xx,yy);
 

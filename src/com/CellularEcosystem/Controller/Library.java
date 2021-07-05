@@ -21,7 +21,11 @@ public class Library {
         int gg = (int)Math.round((color1.getGreen() - color0.getGreen()) * pc);
         int bb = (int)Math.round((color1.getBlue() - color0.getBlue()) * pc);
 
-        return new Color (color0.getRed() + rr,color0.getGreen() + gg,color0.getBlue() + bb);
+        rr = Library.ClampInt(color0.getRed() + rr,0,254);
+        gg = Library.ClampInt(color0.getGreen() + gg,0,254);
+        bb = Library.ClampInt(color0.getBlue() + bb,0,254);
+
+        return new Color (rr,gg,bb);
     }
 
     public static double InverseLerp(double num, double min, double max)

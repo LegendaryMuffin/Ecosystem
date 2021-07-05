@@ -26,6 +26,9 @@ public class WorldNoise {
     int noiseWidth;
     int noiseHeight;
 
+    int lightNoiseX;
+    int lightNoiseY;
+
     //Light noise
     double[] lightVectorMagnitudes;
     double[] lightVectorAngles;
@@ -45,30 +48,8 @@ public class WorldNoise {
 
     public void Update()
     {
-        UpdateLight();
     }
 
-    void UpdateLight()
-    {
-        int tt = 60 * Settings.gameTickLength / 2; // Time for an entire day
-
-        double cycleMod = (MainController.ticks % tt) * Math.PI * 2.0;
-        cycleMod = Math.sin(cycleMod) * Settings.lightCycleAmplitude;
-
-        //Update light according to cycle
-        for(int j = 0; j < Settings.worldSize; j++)
-        {
-            for (int i = 0; i < Settings.worldSize; i++)
-            {
-                WorldTile tile = world.tiles[i][j];
-
-                double rr = 1.0 - Settings.lightRandomness + tile.random;
-                double ll = world.tiles[i][j].baseLightAmount * (1.0 + cycleMod) * rr;
-                ll = Library.Clamp(ll,0.0,1.0);
-                tile.lightAmount = ll;
-            }
-        }
-    }
 
     // * * * <  T E X T U R E  > * * *
 
@@ -93,7 +74,8 @@ public class WorldNoise {
                 Color col = new Color(noiseTexture.getRGB(i,j));
 
                 //value between 0-1
-                noiseMap[i][j] = (col.getRed() + col.getGreen() + col.getBlue()) / 765.0;
+                double cc = (col.getRed() + col.getGreen() + col.getBlue()) / 765.0;
+                noiseMap[i][j] = Math.floor(cc * Settings.densityLayers) / Settings.densityLayers;
             }
         }
     }
@@ -104,6 +86,7 @@ public class WorldNoise {
     {
         //Random position on noiseMap
         double amp = (1.0 - Settings.densityNoiseSize);
+
         double noiseX = Math.random() * amp;
         double noiseY = Math.random() * amp;
 
@@ -163,8 +146,8 @@ public class WorldNoise {
     void SetupLightNoise()
     {
         //Random position on noiseMap
-        int noiseX = (int)(Math.random() * (noiseWidth-1));
-        int noiseY = (int)(Math.random() * (noiseHeight-1));
+        lightNoiseX = (int)(Math.random() * (noiseWidth-1));
+        lightNoiseY = (int)(Math.random() * (noiseHeight-1));
 
 
         //Setup base light map
@@ -174,21 +157,21 @@ public class WorldNoise {
             {
                 WorldTile tile = world.tiles[i][j];
 
-                tile.baseLightAmount = GetLightNoise(noiseX,noiseY,tile.angle, tile.distance) * Math.pow(1.0-tile.distance,Settings.lightFalloffMultiplier);
+                tile.baseLightAmount = GetLightNoise(tile.angle, tile.distance) * Math.pow(1.0-tile.distance,Settings.lightFalloffMultiplier);
                 tile.lightAmount = tile.baseLightAmount;
 
             }
         }
     }
 
-    double GetLightNoise(int noiseX, int noiseY, double ang,double distance)
+    public double GetLightNoise(double ang,double distance)
     {
         double lightAmount = 0.0;
         double amp = Settings.lightNoiseAmplitude;
 
         //Get noise texture coordinates
-        double xx = Math.cos(ang) * amp * Settings.lightNoiseSize + noiseX;
-        double yy = Math.sin(ang) * amp * Settings.lightNoiseSize + noiseY;
+        double xx = Math.cos(ang) * amp * Settings.lightNoiseSize + lightNoiseX;
+        double yy = Math.sin(ang) * amp * Settings.lightNoiseSize + lightNoiseY;
 
 
         for(int k = 0; k < Settings.lightNoiseLayers; k++)

@@ -1,5 +1,7 @@
 package com.CellularEcosystem.Controller;
 
+import com.CellularEcosystem.Objects.ColorPalette;
+
 import javax.swing.JFrame;
 import java.awt.*;
 
@@ -40,13 +42,44 @@ public class Main
         if (Settings.fullscreen)
             Screen.frame.setUndecorated(true);
 
+        SetupColors();
+
         //Create thread with MainController class -> Setup
         Thread mainThread = new Thread(new MainController());
         mainThread.start();
 
+        //Setup colors
+
         //Initialize frame
-        Screen.frame.getContentPane().setBackground(Settings.darkBackgroundColor);
+        Screen.frame.getContentPane().setBackground(Settings.backgroundColors[0]);
         Screen.frame.pack();
         Screen.frame.setVisible(true);
+    }
+
+
+    static void SetupColors()
+    {
+        //Background colors
+        int ll = ColorPalette.backColors.length;
+        ll = (int)Math.floor(Math.random() * ll);
+
+        Color darkBackgroundColor = ColorPalette.backColors[ll];
+
+        int rr = Library.ClampInt((int)(darkBackgroundColor.getRed() * Settings.backgroundContrast),0,255);
+        int gg = Library.ClampInt((int)(darkBackgroundColor.getGreen() * Settings.backgroundContrast),0,255);
+        int bb = Library.ClampInt((int)(darkBackgroundColor.getBlue() * Settings.backgroundContrast),0,255);
+
+        Color lightBackgroundColor = new Color(rr,gg,bb);
+
+        Settings.backgroundColors = new Color[]{darkBackgroundColor, lightBackgroundColor};
+
+        //Light Color
+        ll = ColorPalette.lightColors.length;
+        ll = (int)Math.floor(Math.random() * ll);
+
+        Settings.lightColor = ColorPalette.lightColors[ll];
+
+
+
     }
 }
